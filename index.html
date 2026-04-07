@@ -29,19 +29,20 @@
 
 <script>
 
-// 🔴 PASTE YOUR WEB APP URL HERE
+// 🔴 PUT YOUR WEB APP URL HERE
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrCddh3Kiu5ffnsrI8Rrn_dRQ56btSHkyOKUI7ivhZbGlbowXZe3Heav6RbuR9Qv9l1w/exec";
 
 let data = {};
 let activeSessions = {};
 
-// 🔹 LOAD DATA FROM GOOGLE SHEET
+// LOAD DATA
 fetch(SCRIPT_URL)
   .then(res => res.json())
   .then(resData => {
     data = resData;
     loadGP();
-  });
+  })
+  .catch(err => alert("Error loading dropdown data"));
 
 // LOAD GP
 function loadGP() {
@@ -55,7 +56,6 @@ function loadGP() {
 
 // GP → Village
 document.getElementById("gp").onchange = function() {
-
   let v = document.getElementById("village");
   v.innerHTML = "<option value=''>Select Village</option>";
 
@@ -66,7 +66,6 @@ document.getElementById("gp").onchange = function() {
 
 // Village → Habitation
 document.getElementById("village").onchange = function() {
-
   let h = document.getElementById("habitation");
   h.innerHTML = "<option value=''>Select Habitation</option>";
 
@@ -112,7 +111,13 @@ function startSupply() {
         start: startTime,
         photo: reader.result.split(",")[1]
       })
-    });
+    })
+    .then(res => res.text())
+    .then(res => {
+      alert("Saved successfully");
+      console.log(res);
+    })
+    .catch(err => alert("Error saving data"));
 
     activeSessions[id] = { gp, village, hab, start: startTime };
 
@@ -135,6 +140,11 @@ function stopSupply(id) {
       id,
       stop: stopTime
     })
+  })
+  .then(res => res.text())
+  .then(res => {
+    alert("Stopped successfully");
+    console.log(res);
   });
 
   delete activeSessions[id];
