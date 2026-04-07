@@ -1,156 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Water Supply</title>
-
-<style>
-body { font-family: Arial; padding: 15px; background:#f5f5f5;}
-.box { background:white; padding:15px; border-radius:10px;}
-select, button, input { width:100%; padding:10px; margin-top:10px; }
-
-.start { background:green; color:white;}
-.stop { background:red; color:white;}
-.submit { background:blue; color:white;}
-
-.session {
-  background:#e8f5e9;
-  padding:10px;
-  margin-top:10px;
-  border-radius:8px;
-}
-</style>
+  <title>Water Supply Reporting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial; padding:15px; background:#f5f5f5;}
+    select, button, input { width:100%; padding:10px; margin:8px 0; }
+    .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
+    .stop { background:red; color:white; }
+    .start { background:green; color:white; }
+  </style>
 </head>
 
 <body>
 
-<div class="box">
+<h2>Water Supply Reporting</h2>
 
-<h3>Water Supply Reporting</h3>
+<select id="gp">
+  <option value="">Select GP</option>
+</select>
 
-<select id="gp" onchange="loadVillage()"></select>
-<select id="village" onchange="loadHabitation()"></select>
-<select id="habitation"></select>
+<select id="village">
+  <option value="">Select Village</option>
+</select>
 
-<button class="start" onclick="startSupply()">Start Supply</button>
-
-<h4>Active Supplies</h4>
-<div id="sessions"></div>
+<select id="habitation">
+  <option value="">Select Habitation</option>
+</select>
 
 <input type="file" id="photo" accept="image/*">
 
-<button class="submit" onclick="submitData()">Submit All</button>
+<button class="start" onclick="startSupply()">Start Supply</button>
 
-</div>
+<h3>Active Supplies</h3>
+<div id="sessions"></div>
 
 <script>
 
-let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYHI6ZBbyO8Ha1BB_e6jA2S2eQSRHv3WeqdlWRi5emgN7jqMjTq1zGFMr49GJTx33qhg/exec";
-let data = {};
+//  PASTE YOUR GOOGLE SCRIPT URL HERE
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2qnmFt0JealcxgWG4C8miiiu6IrqOvugBOi3azphYBon02Lb2R3q9vjrbKJYGOqW0Tg/exec";
+
+//  YOUR DATA (ADD FULL DATA HERE)
+const data = {
+  "GP1": {
+    "Village1": ["Hab1","Hab2"],
+    "Village2": ["Hab3"]
+  },
+  "GP2": {
+    "Village3": ["Hab4","Hab5"]
+  }
+};
+
 let activeSessions = {};
 
-//  LOAD DATA
-fetch(SCRIPT_URL + "?type=getData")
-.then(res => res.json())
-.then(res => {
-  data = res;
-  loadGP();
-});
-
-//  LOAD GP
-function loadGP() {
-  let gp = document.getElementById("gp");
-  gp.innerHTML = "<option>Select GP</option>";
-  for (let g in data) {
-    gp.innerHTML += `<option value="${g}">${g}</option>`;
-  }
+// Populate GP
+let gpSelect = document.getElementById("gp");
+for (let gp in data) {
+  gpSelect.innerHTML += `<option value="${gp}">${gp}</option>`;
 }
 
-//  LOAD VILLAGE
-function loadVillage() {
-  let gp = document.getElementById("gp").value;
-  let village = document.getElementById("village");
-
-  village.innerHTML = "<option>Select Village</option>";
-
-  if (!data[gp]) return;
-
-  for (let v in data[gp]) {
-    village.innerHTML += `<option value="${v}">${v}</option>`;
+// GP → Village
+gpSelect.onchange = function() {
+  let v = document.getElementById("village");
+  v.innerHTML = "<option>Select Village</option>";
+  for (let village in data[this.value]) {
+    v.innerHTML += `<option value="${village}">${village}</option>`;
   }
-}
+};
 
-//  LOAD HABITATION
-function loadHabitation() {
-  let gp = document.getElementById("gp").value;
-  let village = document.getElementById("village").value;
-  let hab = document.getElementById("habitation");
-
-  hab.innerHTML = "<option>Select Habitation</option>";
-
-  if (!data[gp] || !data[gp][village]) return;
-
-  data[gp][village].forEach(h => {
-    hab.innerHTML += `<option value="${h}">${h}</option>`;
+// Village → Habitation
+document.getElementById("village").onchange = function() {
+  let h = document.getElementById("habitation");
+  h.innerHTML = "<option>Select Habitation</option>";
+  data[gpSelect.value][this.value].forEach(x=>{
+    h.innerHTML += `<option value="${x}">${x}</option>`;
   });
-}
+};
 
-//  START SUPPLY
+// START
 function startSupply() {
-
-  let gp = document.getElementById("gp").value;
-  let village = document.getElementById("village").value;
-  let hab = document.getElementById("habitation").value;
-
-  if (!gp || !village || !hab) {
-    alert("Select all fields");
-    return;
-  }
-
-  let key = gp + "|" + village + "|" + hab;
-
-  if (activeSessions[key]) {
-    alert("Already started!");
-    return;
-  }
-
-  activeSessions[key] = {
-    gp, village, hab,
-    start: new Date().toLocaleString(),
-    stop: ""
-  };
-
-  renderSessions();
-}
-
-//  STOP SUPPLY
-function stopSupply(key) {
-  activeSessions[key].stop = new Date().toLocaleString();
-  renderSessions();
-}
-
-//  SHOW ACTIVE LIST
-function renderSessions() {
-
-  let container = document.getElementById("sessions");
-  container.innerHTML = "";
-
-  for (let key in activeSessions) {
-    let s = activeSessions[key];
-
-    container.innerHTML += `
-      <div class="session">
-        <b>${s.gp} - ${s.village} - ${s.hab}</b><br>
-        Start: ${s.start}<br>
-        Stop: ${s.stop || "Running"}<br>
-        ${!s.stop ? `<button onclick="stopSupply('${key}')" class="stop">Stop</button>` : ""}
-      </div>
-    `;
-  }
-}
-
-// 🔹 SUBMIT ALL
-function submitData() {
 
   let file = document.getElementById("photo").files[0];
 
@@ -163,39 +91,72 @@ function submitData() {
 
   reader.onloadend = function() {
 
-    let base64 = reader.result.split(",")[1];
+    let id = Date.now().toString();
 
-    let entries = [];
+    let gp = gpSelect.value;
+    let village = document.getElementById("village").value;
+    let hab = document.getElementById("habitation").value;
 
-    for (let key in activeSessions) {
-      let s = activeSessions[key];
-
-      if (s.start && s.stop) {
-        entries.push(s);
-      }
-    }
-
-    if (entries.length === 0) {
-      alert("No completed entries");
-      return;
-    }
+    let startTime = new Date().toLocaleString();
 
     fetch(SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        entries: entries,
-        photo: base64,
-        fileName: file.name
+        type: "start",
+        id,
+        gp,
+        village,
+        hab,
+        start: startTime,
+        photo: reader.result.split(",")[1]
       })
-    })
-    .then(() => {
-      alert("Submitted Successfully");
-      location.reload();
-    })
-    .catch(() => alert("Error"));
+    });
+
+    activeSessions[id] = { gp, village, hab, start: startTime };
+
+    document.getElementById("photo").value = "";
+    renderSessions();
   };
 
   reader.readAsDataURL(file);
+}
+
+// STOP
+function stopSupply(id) {
+
+  let stopTime = new Date().toLocaleString();
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      type: "stop",
+      id,
+      stop: stopTime
+    })
+  });
+
+  delete activeSessions[id];
+  renderSessions();
+}
+
+// DISPLAY
+function renderSessions() {
+
+  let div = document.getElementById("sessions");
+  div.innerHTML = "";
+
+  for (let id in activeSessions) {
+
+    let s = activeSessions[id];
+
+    div.innerHTML += `
+      <div class="card">
+        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br>
+        Start: ${s.start}<br>
+        <button class="stop" onclick="stopSupply('${id}')">Stop</button>
+      </div>
+    `;
+  }
 }
 
 </script>
