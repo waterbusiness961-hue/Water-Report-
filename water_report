@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<h3>Water Supply</h3>
+
+<select id="gp" onchange="loadVillage()"></select>
+<select id="village" onchange="loadHabitation()"></select>
+<select id="habitation"></select>
+
+<button onclick="startSupply()">Start</button>
+<input id="startTime">
+
+<button onclick="stopSupply()">Stop</button>
+<input id="stopTime">
+
+<input type="file" id="photo">
+
+<button onclick="submitData()">Submit</button>
+
+<script>
+
+let data = {};
+let startTime = "";
+let stopTime = "";
+
+//  PASTE YOUR SCRIPT URL HERE
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwi4fdFRQ_6TKFgNKUxbMxCFnqI38QB7Wpdxf2VlrX2YWrd8QE3j16K1fg-QPJqHfSRTw/exec";
+
+// Load data
+fetch(SCRIPT_URL + "?type=getData")
+.then(res => res.json())
+.then(res => {
+  data = res;
+  loadGP();
+});
+
+function loadGP() {
+  let gp = document.getElementById("gp");
+  gp.innerHTML = "<option>Select GP</option>";
+  for (let g in data) {
+    gp.innerHTML += `<option value="${g}">${g}</option>`;
+  }
+}
+
+function loadVillage() {
+  let gp = document.getElementById("gp").value;
+  let village = document.getElementById("village");
+  village.innerHTML = "<option>Select Village</option>";
+  for (let v in data[gp]) {
+    village.innerHTML += `<option value="${v}">${v}</option>`;
+  }
+}
+
+function loadHabitation() {
+  let gp = document.getElementById("gp").value;
+  let village = document.getElementById("village").value;
+  let hab = document.getElementById("habitation");
+
+  hab.innerHTML = "<option>Select Habitation</option>";
+  data[gp][village].forEach(h => {
+    hab.innerHTML += `<option value="${h}">${h}</option>`;
+  });
+}
+
+function startSupply() {
+  startTime = new Date().toLocaleString();
+  document.getElementById("startTime").value = startTime;
+}
+
+function stopSupply() {
+  stopTime = new Date().toLocaleString();
+  document.getElementById("stopTime").value = stopTime;
+}
+
+function submitData() {
+
+  let file = document.getElementById("photo").files[0];
+  let reader = new FileReader();
+
+  reader.onloadend = function() {
+
+    let base64 = reader.result.split(",")[1];
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        gp: document.getElementById("gp").value,
+        village: document.getElementById("village").value,
+        habitation: document.getElementById("habitation").value,
+        start: startTime,
+        stop: stopTime,
+        photo: base64,
+        fileName: file.name
+      })
+    })
+    .then(() => alert("Submitted"))
+    .catch(() => alert("Error"));
+  };
+
+  reader.readAsDataURL(file);
+}
+
+</script>
+
+</body>
+</html>
