@@ -16,17 +16,9 @@
 
 <h2>Water Supply Reporting</h2>
 
-<select id="gp">
-  <option value="">Select GP</option>
-</select>
-
-<select id="village">
-  <option value="">Select Village</option>
-</select>
-
-<select id="habitation">
-  <option value="">Select Habitation</option>
-</select>
+<select id="gp"></select>
+<select id="village"></select>
+<select id="habitation"></select>
 
 <input type="file" id="photo" accept="image/*">
 
@@ -37,32 +29,36 @@
 
 <script>
 
-//  PASTE YOUR GOOGLE SCRIPT URL HERE
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1lpYNqH90SPnjQtauk3nnn7vbBWapxQKxRocMcQwZlohGgTqZGqKrQMaEAxWwNMPYIQ/exec";
+// 🔴 PASTE YOUR WEB APP URL HERE
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNMjRrMghuuN7EkYp9EE5SxB9MWg08roSHXiml7swJCfNkEw6rVy47487Zv_udfXEz/exec";
 
-//  YOUR DATA (ADD FULL DATA HERE)
-const data = {
-  "GP1": {
-    "Village1": ["Hab1","Hab2"],
-    "Village2": ["Hab3"]
-  },
-  "GP2": {
-    "Village3": ["Hab4","Hab5"]
-  }
-};
-
+let data = {};
 let activeSessions = {};
 
-// Populate GP
-let gpSelect = document.getElementById("gp");
-for (let gp in data) {
-  gpSelect.innerHTML += `<option value="${gp}">${gp}</option>`;
+// 🔹 LOAD DATA FROM GOOGLE SHEET
+fetch(SCRIPT_URL)
+  .then(res => res.json())
+  .then(resData => {
+    data = resData;
+    loadGP();
+  });
+
+// LOAD GP
+function loadGP() {
+  let gp = document.getElementById("gp");
+  gp.innerHTML = "<option value=''>Select GP</option>";
+
+  for (let g in data) {
+    gp.innerHTML += `<option value="${g}">${g}</option>`;
+  }
 }
 
 // GP → Village
-gpSelect.onchange = function() {
+document.getElementById("gp").onchange = function() {
+
   let v = document.getElementById("village");
-  v.innerHTML = "<option>Select Village</option>";
+  v.innerHTML = "<option value=''>Select Village</option>";
+
   for (let village in data[this.value]) {
     v.innerHTML += `<option value="${village}">${village}</option>`;
   }
@@ -70,9 +66,11 @@ gpSelect.onchange = function() {
 
 // Village → Habitation
 document.getElementById("village").onchange = function() {
+
   let h = document.getElementById("habitation");
-  h.innerHTML = "<option>Select Habitation</option>";
-  data[gpSelect.value][this.value].forEach(x=>{
+  h.innerHTML = "<option value=''>Select Habitation</option>";
+
+  data[document.getElementById("gp").value][this.value].forEach(x=>{
     h.innerHTML += `<option value="${x}">${x}</option>`;
   });
 };
@@ -87,16 +85,20 @@ function startSupply() {
     return;
   }
 
+  let gp = document.getElementById("gp").value;
+  let village = document.getElementById("village").value;
+  let hab = document.getElementById("habitation").value;
+
+  if (!gp || !village || !hab) {
+    alert("Select all fields");
+    return;
+  }
+
   let reader = new FileReader();
 
   reader.onloadend = function() {
 
     let id = Date.now().toString();
-
-    let gp = gpSelect.value;
-    let village = document.getElementById("village").value;
-    let hab = document.getElementById("habitation").value;
-
     let startTime = new Date().toLocaleString();
 
     fetch(SCRIPT_URL, {
@@ -139,7 +141,7 @@ function stopSupply(id) {
   renderSessions();
 }
 
-// DISPLAY
+// DISPLAY ACTIVE
 function renderSessions() {
 
   let div = document.getElementById("sessions");
