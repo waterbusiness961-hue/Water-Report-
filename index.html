@@ -7,8 +7,8 @@
     body { font-family: Arial; padding:15px; background:#f5f5f5;}
     select, button, input { width:100%; padding:10px; margin:8px 0; }
     .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
-    .stop { background:red; color:white; }
-    .start { background:green; color:white; }
+    .add { background:green; color:white; }
+    .submit { background:blue; color:white; }
   </style>
 </head>
 
@@ -20,29 +20,28 @@
 <select id="village"></select>
 <select id="habitation"></select>
 
-<input type="file" id="photo" accept="image/*">
+<button class="add" onclick="addSession()">Add Location</button>
 
-<button class="start" onclick="startSupply()">Start Supply</button>
+<h3>Selected Locations</h3>
+<div id="list"></div>
 
-<h3>Active Supplies</h3>
-<div id="sessions"></div>
+<button class="submit" onclick="submitAll()">Submit All</button>
 
 <script>
 
-// 🔴 PUT YOUR WEB APP URL HERE
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrCddh3Kiu5ffnsrI8Rrn_dRQ56btSHkyOKUI7ivhZbGlbowXZe3Heav6RbuR9Qv9l1w/exec";
+const URL = "https://script.google.com/macros/s/AKfycbyMqaUdsbfJZCmLm1rE7UhpJ4izrOv2lMGU3fLgVOY-_tDv9jvsm3cPgqMyWWG9Ip6Z/exec";
 
 let data = {};
-let activeSessions = {};
+let sessions = [];
 
 // LOAD DATA
-fetch(SCRIPT_URL)
-  .then(res => res.json())
-  .then(resData => {
-    data = resData;
-    loadGP();
-  })
-  .catch(err => alert("Error loading dropdown data"));
+fetch(URL)
+.then(res => res.json())
+.then(d => {
+  data = d;
+  loadGP();
+})
+.catch(() => alert("Error loading data"));
 
 // LOAD GP
 function loadGP() {
@@ -59,30 +58,23 @@ document.getElementById("gp").onchange = function() {
   let v = document.getElementById("village");
   v.innerHTML = "<option value=''>Select Village</option>";
 
-  for (let village in data[this.value]) {
-    v.innerHTML += `<option value="${village}">${village}</option>`;
+  for (let x in data[this.value]) {
+    v.innerHTML += `<option value="${x}">${x}</option>`;
   }
 };
 
-// Village → Habitation
+// Village → Hab
 document.getElementById("village").onchange = function() {
   let h = document.getElementById("habitation");
   h.innerHTML = "<option value=''>Select Habitation</option>";
 
-  data[document.getElementById("gp").value][this.value].forEach(x=>{
+  data[gp.value][this.value].forEach(x=>{
     h.innerHTML += `<option value="${x}">${x}</option>`;
   });
 };
 
-// START
-function startSupply() {
-
-  let file = document.getElementById("photo").files[0];
-
-  if (!file) {
-    alert("Upload photo");
-    return;
-  }
+// ADD SESSION
+function addSession() {
 
   let gp = document.getElementById("gp").value;
   let village = document.getElementById("village").value;
@@ -93,82 +85,66 @@ function startSupply() {
     return;
   }
 
+  sessions.push({
+    gp,
+    village,
+    hab,
+    photo: "",
+    start: new Date().toLocaleString() // ✅ Start time
+  });
+
+  render();
+}
+
+// RENDER LIST
+function render() {
+
+  let div = document.getElementById("list");
+  div.innerHTML = "";
+
+  sessions.forEach((s, i) => {
+    div.innerHTML += `
+      <div class="card">
+        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br>
+        Start: ${s.start}<br>
+        <input type="file" onchange="uploadPhoto(event, ${i})">
+      </div>
+    `;
+  });
+}
+
+// UPLOAD PHOTO
+function uploadPhoto(e, index) {
+
+  let file = e.target.files[0];
   let reader = new FileReader();
 
   reader.onloadend = function() {
-
-    let id = Date.now().toString();
-    let startTime = new Date().toLocaleString();
-
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        type: "start",
-        id,
-        gp,
-        village,
-        hab,
-        start: startTime,
-        photo: reader.result.split(",")[1]
-      })
-    })
-    .then(res => res.text())
-    .then(res => {
-      alert("Saved successfully");
-      console.log(res);
-    })
-    .catch(err => alert("Error saving data"));
-
-    activeSessions[id] = { gp, village, hab, start: startTime };
-
-    document.getElementById("photo").value = "";
-    renderSessions();
+    sessions[index].photo = reader.result.split(",")[1];
   };
 
   reader.readAsDataURL(file);
 }
 
-// STOP
-function stopSupply(id) {
+// SUBMIT ALL
+function submitAll() {
 
-  let stopTime = new Date().toLocaleString();
+  if (sessions.length === 0) {
+    alert("No locations added");
+    return;
+  }
 
-  fetch(SCRIPT_URL, {
+  fetch(URL, {
     method: "POST",
-    body: JSON.stringify({
-      type: "stop",
-      id,
-      stop: stopTime
-    })
+    body: JSON.stringify(sessions)
   })
   .then(res => res.text())
   .then(res => {
-    alert("Stopped successfully");
-    console.log(res);
-  });
-
-  delete activeSessions[id];
-  renderSessions();
-}
-
-// DISPLAY ACTIVE
-function renderSessions() {
-
-  let div = document.getElementById("sessions");
-  div.innerHTML = "";
-
-  for (let id in activeSessions) {
-
-    let s = activeSessions[id];
-
-    div.innerHTML += `
-      <div class="card">
-        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br>
-        Start: ${s.start}<br>
-        <button class="stop" onclick="stopSupply('${id}')">Stop</button>
-      </div>
-    `;
-  }
+    alert("All data submitted successfully");
+    sessions = [];
+    render();
+  })
+  .catch(err => alert("Error submitting data"));
 }
 
 </script>
