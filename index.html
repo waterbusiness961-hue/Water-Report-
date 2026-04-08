@@ -16,9 +16,14 @@
 
 <h2>Water Supply Reporting</h2>
 
-<select id="gp"></select>
-<select id="village"></select>
-<select id="habitation"></select>
+<input list="gpList" id="gp" placeholder="Type GP name">
+<datalist id="gpList"></datalist>
+
+<input list="villageList" id="village" placeholder="Type Village name">
+<datalist id="villageList"></datalist>
+
+<input list="habitationList" id="habitation" placeholder="Type Habitation name">
+<datalist id="habitationList"></datalist>
 
 <button class="add" onclick="addSession()">Add Location</button>
 
@@ -45,32 +50,40 @@ fetch(URL)
 
 // LOAD GP
 function loadGP() {
-  let gp = document.getElementById("gp");
-  gp.innerHTML = "<option value=''>Select GP</option>";
+  let gpList = document.getElementById("gpList");
+  gpList.innerHTML = "";
 
   for (let g in data) {
-    gp.innerHTML += `<option value="${g}">${g}</option>`;
+    gpList.innerHTML += `<option value="${g}">`;
   }
 }
 
 // GP → Village
-document.getElementById("gp").onchange = function() {
-  let v = document.getElementById("village");
-  v.innerHTML = "<option value=''>Select Village</option>";
+document.getElementById("gp").oninput = function() {
+  let villageList = document.getElementById("villageList");
+  villageList.innerHTML = "";
 
-  for (let x in data[this.value]) {
-    v.innerHTML += `<option value="${x}">${x}</option>`;
+  let gp = this.value;
+
+  if (data[gp]) {
+    for (let v in data[gp]) {
+      villageList.innerHTML += `<option value="${v}">`;
+    }
   }
 };
-
 // Village → Hab
-document.getElementById("village").onchange = function() {
-  let h = document.getElementById("habitation");
-  h.innerHTML = "<option value=''>Select Habitation</option>";
+document.getElementById("village").oninput = function() {
+  let habList = document.getElementById("habitationList");
+  habList.innerHTML = "";
 
-  data[gp.value][this.value].forEach(x=>{
-    h.innerHTML += `<option value="${x}">${x}</option>`;
-  });
+  let gp = document.getElementById("gp").value;
+  let village = this.value;
+
+  if (data[gp] && data[gp][village]) {
+    data[gp][village].forEach(h => {
+      habList.innerHTML += `<option value="${h}">`;
+    });
+  }
 };
 
 // ADD SESSION
@@ -128,13 +141,6 @@ function uploadPhoto(e, index) {
 
 // SUBMIT ALL
 function submitAll() {
-
-  if (sessions.length === 0) {
-    alert("No locations added");
-    return;
-  }
-
-  function submitAll() {
 
   if (sessions.length === 0) {
     alert("No locations added");
