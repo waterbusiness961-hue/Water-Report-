@@ -1,167 +1,87 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Water Supply Reporting</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body { font-family: Arial; padding:15px; background:#f5f5f5;}
-    input, button { width:100%; padding:10px; margin:8px 0; }
-    
-    .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
-    .add { background:green; color:white; }
-    .submit { background:blue; color:white; }
-
-    .hab-list { background:white; padding:10px; border-radius:8px; max-height:200px; overflow:auto; }
-  </style>
-</head>
-
-<body>
-
-<h2>Water Supply Reporting</h2>
-
-<!-- GP -->
-<input list="gpList" id="gp" placeholder="Type GP name">
-<datalist id="gpList"></datalist>
-
-<!-- Village -->
-<input list="villageList" id="village" placeholder="Type Village name">
-<datalist id="villageList"></datalist>
-
-<!-- Habitations (Checkboxes) -->
-<div class="hab-list" id="habitationList"></div>
-
-<!-- Time Selection -->
-<label>Start Time</label>
-<input type="time" id="startTime">
-
-<label>End Time</label>
-<input type="time" id="endTime">
-
-<button class="add" onclick="addSession()">Add Entry</button>
-
-<h3>Entries</h3>
-<div id="list"></div>
-
-<button class="submit" onclick="submitAll()">Submit All</button>
-
 <script>
 
-const URL = "https://script.google.com/macros/s/AKfycbzvpdw4FQp1CqR9h6dpcNbLuho1SDNiYZgF1InfgB3AQ6pzuUWxhm30NmtdmU0zUu5z/exec";
-
-let data = {};
-let sessions = [];
-
-// LOAD DATA
-fetch(URL)
-.then(res => res.json())
-.then(d => {
-  data = d;
-  loadGP();
-});
-
-// LOAD GP
-function loadGP() {
-  let gpList = document.getElementById("gpList");
-  gpList.innerHTML = "";
-
-  for (let g in data) {
-    gpList.innerHTML += `<option value="${g}">`;
-  }
-}
-
-// GP → Village
-document.getElementById("gp").oninput = function() {
-  let villageList = document.getElementById("villageList");
-  villageList.innerHTML = "";
-
-  let gp = this.value;
-
-  if (data[gp]) {
-    for (let v in data[gp]) {
-      villageList.innerHTML += `<option value="${v}">`;
-    }
-  }
-};
-
-// Village → Habitations (Checkbox)
-document.getElementById("village").oninput = function() {
-
-  let gp = document.getElementById("gp").value;
-  let village = this.value;
-
-  let div = document.getElementById("habitationList");
-  div.innerHTML = "";
-
-  if (data[gp] && data[gp][village]) {
-
-    data[gp][village].forEach((h, i) => {
-      div.innerHTML += `
-        <label>
-          <input type="checkbox" value="${h}"> ${h}
-        </label><br>
-      `;
-    });
-  }
-};
-
-// ADD SESSION
+// ADD SESSION (MULTIPLE HAB WITH INDIVIDUAL INPUTS)
 function addSession() {
 
   let gp = document.getElementById("gp").value;
   let village = document.getElementById("village").value;
-  let start = document.getElementById("startTime").value;
-  let end = document.getElementById("endTime").value;
 
   let checked = document.querySelectorAll("#habitationList input:checked");
 
-  if (!gp || !village || checked.length === 0 || !start || !end) {
+  if (!gp || !village || checked.length === 0) {
     alert("Fill all fields");
     return;
   }
 
   checked.forEach(c => {
+
     sessions.push({
       gp,
       village,
       hab: c.value,
-      start,
-      end,
+      start: "",
+      end: "",
       photo: ""
     });
+
   });
 
   render();
 }
 
-// RENDER
+
+// RENDER WITH INDIVIDUAL CONTROLS
 function render() {
 
   let div = document.getElementById("list");
   div.innerHTML = "";
 
   sessions.forEach((s, i) => {
+
     div.innerHTML += `
       <div class="card">
-        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br>
-        Start: ${formatTime(s.start)}<br>
-        End: ${formatTime(s.end)}<br>
+
+        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br><br>
+
+        Start Time:
+        <input type="time" onchange="updateStart(${i}, this.value)"><br>
+
+        End Time:
+        <input type="time" onchange="updateEnd(${i}, this.value)"><br>
+
+        Upload Photo:
         <input type="file" onchange="uploadPhoto(event, ${i})">
+
       </div>
     `;
   });
 }
 
-// FORMAT TIME → AM/PM
+
+// UPDATE START TIME
+function updateStart(index, value) {
+  sessions[index].start = value;
+}
+
+// UPDATE END TIME
+function updateEnd(index, value) {
+  sessions[index].end = value;
+}
+
+
+// FORMAT TIME (AM/PM)
 function formatTime(time) {
+  if (!time) return "";
   let [h, m] = time.split(":");
   let ampm = h >= 12 ? "PM" : "AM";
   h = h % 12 || 12;
   return `${h}:${m} ${ampm}`;
 }
 
-// PHOTO
+
+// PHOTO UPLOAD
 function uploadPhoto(e, index) {
+
   let file = e.target.files[0];
   let reader = new FileReader();
 
@@ -172,7 +92,8 @@ function uploadPhoto(e, index) {
   reader.readAsDataURL(file);
 }
 
-// SUBMIT
+
+// SUBMIT VALIDATION
 function submitAll() {
 
   if (sessions.length === 0) {
@@ -180,11 +101,16 @@ function submitAll() {
     return;
   }
 
+  for (let s of sessions) {
+    if (!s.start || !s.end) {
+      alert("Fill time for all habitations");
+      return;
+    }
+  }
+
   fetch(URL, {
     method: "POST",
-    body: JSON.stringify({
-      entries: sessions
-    })
+    body: JSON.stringify({ entries: sessions })
   })
   .then(res => res.text())
   .then(() => {
@@ -196,6 +122,3 @@ function submitAll() {
 }
 
 </script>
-
-</body>
-</html>
