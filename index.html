@@ -28,15 +28,8 @@
 <input list="villageList" id="village" placeholder="Type Village name">
 <datalist id="villageList"></datalist>
 
-<!-- Habitations (Checkboxes) -->
+<!-- Habitations -->
 <div class="hab-list" id="habitationList"></div>
-
-<!-- Time Selection -->
-<label>Start Time</label>
-<input type="time" id="startTime">
-
-<label>End Time</label>
-<input type="time" id="endTime">
 
 <button class="add" onclick="addSession()">Add Entry</button>
 
@@ -58,7 +51,9 @@ fetch(URL)
 .then(d => {
   data = d;
   loadGP();
-});
+})
+.catch(() => alert("Error loading data"));
+
 
 // LOAD GP
 function loadGP() {
@@ -70,8 +65,10 @@ function loadGP() {
   }
 }
 
+
 // GP → Village
 document.getElementById("gp").oninput = function() {
+
   let villageList = document.getElementById("villageList");
   villageList.innerHTML = "";
 
@@ -84,7 +81,8 @@ document.getElementById("gp").oninput = function() {
   }
 };
 
-// Village → Habitations (Checkbox)
+
+// Village → Habitations
 document.getElementById("village").oninput = function() {
 
   let gp = document.getElementById("gp").value;
@@ -95,7 +93,7 @@ document.getElementById("village").oninput = function() {
 
   if (data[gp] && data[gp][village]) {
 
-    data[gp][village].forEach((h, i) => {
+    data[gp][village].forEach(h => {
       div.innerHTML += `
         <label>
           <input type="checkbox" value="${h}"> ${h}
@@ -105,9 +103,8 @@ document.getElementById("village").oninput = function() {
   }
 };
 
-<script>
 
-// ADD SESSION (MULTIPLE HAB WITH INDIVIDUAL INPUTS)
+// ADD SESSION
 function addSession() {
 
   let gp = document.getElementById("gp").value;
@@ -121,7 +118,6 @@ function addSession() {
   }
 
   checked.forEach(c => {
-
     sessions.push({
       gp,
       village,
@@ -130,14 +126,13 @@ function addSession() {
       end: "",
       photo: ""
     });
-
   });
 
   render();
 }
 
 
-// RENDER WITH INDIVIDUAL CONTROLS
+// RENDER
 function render() {
 
   let div = document.getElementById("list");
@@ -165,24 +160,15 @@ function render() {
 }
 
 
-// UPDATE START TIME
+// UPDATE START
 function updateStart(index, value) {
   sessions[index].start = value;
 }
 
-// UPDATE END TIME
+
+// UPDATE END
 function updateEnd(index, value) {
   sessions[index].end = value;
-}
-
-
-// FORMAT TIME (AM/PM)
-function formatTime(time) {
-  if (!time) return "";
-  let [h, m] = time.split(":");
-  let ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12 || 12;
-  return `${h}:${m} ${ampm}`;
 }
 
 
@@ -200,7 +186,7 @@ function uploadPhoto(e, index) {
 }
 
 
-// SUBMIT VALIDATION
+// SUBMIT
 function submitAll() {
 
   if (sessions.length === 0) {
@@ -225,7 +211,7 @@ function submitAll() {
     sessions = [];
     render();
   })
-  .catch(() => alert("Error"));
+  .catch(() => alert("Error submitting data"));
 }
 
 </script>
