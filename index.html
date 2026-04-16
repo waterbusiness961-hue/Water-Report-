@@ -7,11 +7,9 @@
   <style>
     body { font-family: Arial; padding:15px; background:#f5f5f5;}
     input, button { width:100%; padding:10px; margin:8px 0; }
-    
     .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
     .add { background:green; color:white; }
     .submit { background:blue; color:white; }
-
     .hab-list { background:white; padding:10px; border-radius:8px; max-height:200px; overflow:auto; }
   </style>
 </head>
@@ -19,6 +17,10 @@
 <body>
 
 <h2>Water Supply Reporting</h2>
+
+<!-- DATE -->
+<label>Select Date</label>
+<input type="date" id="reportDate">
 
 <!-- GP -->
 <input list="gpList" id="gp" placeholder="Type GP name">
@@ -28,7 +30,7 @@
 <input list="villageList" id="village" placeholder="Type Village name">
 <datalist id="villageList"></datalist>
 
-<!-- Habitations -->
+<!-- HABITATIONS -->
 <div class="hab-list" id="habitationList"></div>
 
 <button class="add" onclick="addSession()">Add Entry</button>
@@ -59,7 +61,6 @@ fetch(URL)
 function loadGP() {
   let gpList = document.getElementById("gpList");
   gpList.innerHTML = "";
-
   for (let g in data) {
     gpList.innerHTML += `<option value="${g}">`;
   }
@@ -68,7 +69,6 @@ function loadGP() {
 
 // GP → Village
 document.getElementById("gp").oninput = function() {
-
   let villageList = document.getElementById("villageList");
   villageList.innerHTML = "";
 
@@ -92,7 +92,6 @@ document.getElementById("village").oninput = function() {
   div.innerHTML = "";
 
   if (data[gp] && data[gp][village]) {
-
     data[gp][village].forEach(h => {
       div.innerHTML += `
         <label>
@@ -109,10 +108,11 @@ function addSession() {
 
   let gp = document.getElementById("gp").value;
   let village = document.getElementById("village").value;
+  let date = document.getElementById("reportDate").value;
 
   let checked = document.querySelectorAll("#habitationList input:checked");
 
-  if (!gp || !village || checked.length === 0) {
+  if (!gp || !village || checked.length === 0 || !date) {
     alert("Fill all fields");
     return;
   }
@@ -122,6 +122,7 @@ function addSession() {
       gp,
       village,
       hab: c.value,
+      date,
       start: "",
       end: "",
       photo: ""
@@ -142,8 +143,8 @@ function render() {
 
     div.innerHTML += `
       <div class="card">
-
-        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br><br>
+        <b>${s.gp}</b> - ${s.village} - ${s.hab}<br>
+        Date: ${s.date}<br><br>
 
         Start Time:
         <input type="time" onchange="updateStart(${i}, this.value)"><br>
@@ -153,33 +154,24 @@ function render() {
 
         Upload Photo:
         <input type="file" onchange="uploadPhoto(event, ${i})">
-
       </div>
     `;
   });
 }
 
 
-// UPDATE START
-function updateStart(index, value) {
-  sessions[index].start = value;
-}
+// UPDATE TIME
+function updateStart(i, val) { sessions[i].start = val; }
+function updateEnd(i, val) { sessions[i].end = val; }
 
 
-// UPDATE END
-function updateEnd(index, value) {
-  sessions[index].end = value;
-}
-
-
-// PHOTO UPLOAD
-function uploadPhoto(e, index) {
-
+// PHOTO
+function uploadPhoto(e, i) {
   let file = e.target.files[0];
   let reader = new FileReader();
 
   reader.onloadend = function() {
-    sessions[index].photo = reader.result.split(",")[1];
+    sessions[i].photo = reader.result.split(",")[1];
   };
 
   reader.readAsDataURL(file);
