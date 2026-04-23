@@ -222,12 +222,29 @@ function submitAll() {
     return;
   }
 
-  for (let s of sessions) {
-    if (!s.start || !s.end) {
-      alert("Fill time for all habitations");
-      return;
+  console.log(JSON.stringify({ entries: sessions }, null, 2));
+
+  fetch(URL, {
+    method: "POST",
+    body: JSON.stringify({
+      entries: sessions   // ✅ VERY IMPORTANT
+    }),
+    headers: {
+      "Content-Type": "application/json"
     }
-  }
+  })
+  .then(res => res.text())
+  .then(res => {
+    console.log(res);
+    alert("Submitted successfully");
+    sessions = [];
+    render();
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Error submitting");
+  });
+}
 
   fetch(URL, {
     method: "POST",
