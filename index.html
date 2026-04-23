@@ -6,7 +6,8 @@
 
   <style>
     body { font-family: Arial; padding:15px; background:#f5f5f5;}
-    input, button { width:100%; padding:10px; margin:8px 0; }
+    select, input, button { width:100%; padding:10px; margin:8px 0; }
+
     .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
     .add { background:green; color:white; }
     .submit { background:blue; color:white; }
@@ -19,11 +20,10 @@
       overflow:auto;
     }
 
-    /* ✅ FINAL PERFECT ALIGNMENT */
     .hab-list label {
       display: flex;
       align-items: center;
-      justify-content: space-between; /* left text, right checkbox */
+      justify-content: space-between;
       padding: 6px 4px;
       border-bottom: 1px solid #eee;
       font-size: 14px;
@@ -33,16 +33,9 @@
       width: 18px;
       height: 18px;
       margin: 0;
-      flex-shrink: 0;
     }
 
-    .hab-list span {
-      flex: 1;
-    }
-
-    .hab-list label:hover {
-      background: #f9f9f9;
-    }
+    .hab-list span { flex: 1; }
   </style>
 </head>
 
@@ -50,17 +43,18 @@
 
 <h2>Water Supply Reporting</h2>
 
-<!-- DATE -->
 <label>Select Date</label>
 <input type="date" id="reportDate">
 
 <!-- GP -->
-<input list="gpList" id="gp" placeholder="Type GP name">
-<datalist id="gpList"></datalist>
+<select id="gp">
+  <option value="">Select GP</option>
+</select>
 
 <!-- Village -->
-<input list="villageList" id="village" placeholder="Type Village name">
-<datalist id="villageList"></datalist>
+<select id="village">
+  <option value="">Select Village</option>
+</select>
 
 <!-- HABITATIONS -->
 <div class="hab-list" id="habitationList"></div>
@@ -91,31 +85,34 @@ fetch(URL)
 
 // LOAD GP
 function loadGP() {
-  let gpList = document.getElementById("gpList");
-  gpList.innerHTML = "";
+  let gpSelect = document.getElementById("gp");
+  gpSelect.innerHTML = `<option value="">Select GP</option>`;
+
   for (let g in data) {
-    gpList.innerHTML += `<option value="${g}">`;
+    gpSelect.innerHTML += `<option value="${g}">${g}</option>`;
   }
 }
 
 
 // GP → Village
-document.getElementById("gp").oninput = function() {
-  let villageList = document.getElementById("villageList");
-  villageList.innerHTML = "";
-
+document.getElementById("gp").onchange = function() {
   let gp = this.value;
+
+  let villageSelect = document.getElementById("village");
+  villageSelect.innerHTML = `<option value="">Select Village</option>`;
+
+  document.getElementById("habitationList").innerHTML = "";
 
   if (data[gp]) {
     for (let v in data[gp]) {
-      villageList.innerHTML += `<option value="${v}">`;
+      villageSelect.innerHTML += `<option value="${v}">${v}</option>`;
     }
   }
 };
 
 
 // Village → Habitations
-document.getElementById("village").oninput = function() {
+document.getElementById("village").onchange = function() {
 
   let gp = document.getElementById("gp").value;
   let village = this.value;
@@ -161,6 +158,12 @@ function addSession() {
       photo: ""
     });
   });
+
+  // ✅ CLEAR INPUTS (important)
+  document.getElementById("gp").value = "";
+  document.getElementById("village").innerHTML = `<option value="">Select Village</option>`;
+  document.getElementById("reportDate").value = "";
+  document.getElementById("habitationList").innerHTML = "";
 
   render();
 }
