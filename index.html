@@ -246,19 +246,6 @@ function submitAll() {
   });
 }
 
-  fetch(URL, {
-    method: "POST",
-    body: JSON.stringify({ entries: sessions })
-  })
-  .then(res => res.text())
-  .then(() => {
-    alert("Submitted successfully");
-    sessions = [];
-    render();
-  })
-  .catch(() => alert("Error submitting data"));
-}
-
 </script>
 
 </body>
