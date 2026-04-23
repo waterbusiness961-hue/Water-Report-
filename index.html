@@ -10,7 +10,22 @@
     .card { background:white; padding:10px; margin-top:10px; border-radius:8px; }
     .add { background:green; color:white; }
     .submit { background:blue; color:white; }
-    .hab-list { background:white; padding:10px; border-radius:8px; max-height:200px; overflow:auto; }
+
+    .hab-list {
+      background:white;
+      padding:10px;
+      border-radius:8px;
+      max-height:200px;
+      overflow:auto;
+    }
+
+    /* ✅ FIXED ALIGNMENT */
+    .hab-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 
@@ -95,8 +110,9 @@ document.getElementById("village").oninput = function() {
     data[gp][village].forEach(h => {
       div.innerHTML += `
         <label>
-          <input type="checkbox" value="${h}"> ${h}
-        </label><br>
+          <input type="checkbox" value="${h}">
+          <span>${h}</span>
+        </label>
       `;
     });
   }
