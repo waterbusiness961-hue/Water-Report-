@@ -19,12 +19,29 @@
       overflow:auto;
     }
 
-    /* ✅ FIXED ALIGNMENT */
+    /* ✅ FINAL PERFECT ALIGNMENT */
     .hab-list label {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
+      justify-content: space-between; /* left text, right checkbox */
+      padding: 6px 4px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .hab-list input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .hab-list span {
+      flex: 1;
+    }
+
+    .hab-list label:hover {
+      background: #f9f9f9;
     }
   </style>
 </head>
@@ -110,8 +127,8 @@ document.getElementById("village").oninput = function() {
     data[gp][village].forEach(h => {
       div.innerHTML += `
         <label>
-          <input type="checkbox" value="${h}">
           <span>${h}</span>
+          <input type="checkbox" value="${h}">
         </label>
       `;
     });
